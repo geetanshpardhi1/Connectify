@@ -53,8 +53,8 @@ To get started with Connectify development or deployment, follow these steps:
 5. Access Connectify:
    - Open a web browser and visit http://localhost:3000 to access the Connectify web application.
 
-Contributing
+## Contributing
 Contributions to Connectify are welcome! Whether you're fixing a bug, implementing a new feature, or improving documentation, feel free to submit pull requests. Please follow the project's coding style and guidelines when contributing.
 
-License
+## License
 This project is licensed under the MIT License.
