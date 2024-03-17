@@ -116,7 +116,7 @@ SIMPLE_JWT = {
 
 #for cross origin resource sharing
 CORS_ALLOWED_ORIGINS = [
-    "https://example.com",
+    "http://localhost:5173",
     "https://sub.example.com",
     "http://localhost:8080",
     "http://127.0.0.1:9000",
