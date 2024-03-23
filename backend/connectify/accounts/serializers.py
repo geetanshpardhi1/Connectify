@@ -38,6 +38,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['first_name','last_name','dob','profile_img','phone_number','gender','bio']
         
+class UserDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id","email","username"]
+
+class AllUserDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id","email","username"]
+        
 class UserChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=255,style={'input_type':'password'},write_only=True)
     password2 = serializers.CharField(max_length=255,style={'input_type':'password'},write_only=True)
