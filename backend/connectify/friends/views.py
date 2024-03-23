@@ -60,19 +60,27 @@ class PendingFriendRequestsView(APIView):
         else:
             return Response({'detail': 'You do not have any pending friend requests.'}, status=status.HTTP_200_OK)
         
-        
-# class RejectFriendRequestAPIView(APIView):
-#     def delete(self, request):
-#         sender_username = request.data.get('sender_id')
-#         receiver_username = request.data.get('receiver_id')
+class AcceptFriendRequestView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#         try:
-#             friend_request = FriendRequest.objects.get(sender__username=sender_username,
-#                                                        recipient__username=receiver_username,
-#                                                        status='pending')
-#             friend_request.delete()
-#             return Response({'message': 'Friend request rejected successfully'}, status=status.HTTP_204_NO_CONTENT)
-#         except FriendRequest.DoesNotExist:
-#             return Response({'error': 'Friend request does not exist or is not pending'}, status=status.HTTP_404_NOT_FOUND)
-#         except Exception as e:
-#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def post(self, request, sender_username, receiver_username, format=None):
+        sender = User.objects.get(username=sender_username)
+        receiver = User.objects.get(username=receiver_username)
+        if request.user != receiver:
+            return Response({'detail': 'You are not authorized to accept this friend request'}, status=status.HTTP_403_FORBIDDEN)
+        friend_request = FriendRequest.objects.get(sender=sender, recipient=receiver, status='pending')
+        friend_request.status = 'accepted'
+        friend_request.save()
+        return Response({'detail': 'Friend request accepted successfully'}, status=status.HTTP_200_OK)
+    
+class RejectFriendRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, sender_username, receiver_username, format=None):
+        sender = User.objects.get(username=sender_username)
+        receiver = User.objects.get(username=receiver_username)
+        if request.user != receiver:
+            return Response({'detail': 'You are not authorized to reject this friend request'}, status=status.HTTP_403_FORBIDDEN)
+        friend_request = FriendRequest.objects.get(sender=sender, recipient=receiver, status='pending')
+        friend_request.delete()
+        return Response({'detail': 'Friend request rejected successfully'}, status=status.HTTP_204_NO_CONTENT)
