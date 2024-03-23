@@ -9,3 +9,14 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.sender} -> {self.recipient}: {self.status}"
+    
+class Friendship(models.Model):
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user1_friendships')
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user2_friendships')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user1', 'user2')
+
+    def __str__(self):
+        return f" '{self.user1}' -- Is friend of --> {self.user2}"
