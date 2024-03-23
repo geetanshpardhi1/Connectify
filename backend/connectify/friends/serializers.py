@@ -1,10 +1,11 @@
 from rest_framework import serializers
-from .models import FriendRequest
+from .models import FriendRequest,Friendship
 
 class FriendRequestSerializer(serializers.ModelSerializer):
+    recipient_username = serializers.CharField(source='recipient.username', read_only=True)
     class Meta:
         model = FriendRequest
-        fields = ['recipient', 'status'] 
+        fields = ['recipient','recipient_username', 'status'] 
         extra_kwargs = {
             'status': {'default': 'pending'}  
         }
@@ -20,9 +21,7 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         if sender == recipient:
             raise serializers.ValidationError("You cannot send a friend request to yourself.")
 
-        return data
-    
-    
+        return data  
 class PendingRequestSerializer(serializers.ModelSerializer):
     sender = serializers.CharField(source='sender.username', read_only=True)
     recipient = serializers.CharField(source='recipient.username', read_only=True)
@@ -30,3 +29,9 @@ class PendingRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest
         fields = ['sender', 'recipient', 'status','created_at']
+        
+class FriendshipSerializer(serializers.ModelSerializer):
+    friend = serializers.CharField(source='user2.username', read_only=True)
+    class Meta:
+        model = Friendship
+        fields = ['friend','created_at']

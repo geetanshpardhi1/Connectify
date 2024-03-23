@@ -4,7 +4,7 @@ from rest_framework import status
 from accounts.renderers import UserRenderer
 from accounts.models import User
 from .models import FriendRequest,Friendship
-from .serializers import FriendRequestSerializer,PendingRequestSerializer
+from .serializers import FriendRequestSerializer,PendingRequestSerializer,FriendshipSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ValidationError
 
@@ -90,3 +90,12 @@ class RemoveFriendView(APIView):
             return Response({'msg': 'Friend removed successfully'}, status=status.HTTP_200_OK)
         except Friendship.DoesNotExist:
             return Response({'msg': 'No friend found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class FriendListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        user = request.user 
+        friendships = Friendship.objects.filter(user1=user)
+        serializer = FriendshipSerializer(friendships, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
