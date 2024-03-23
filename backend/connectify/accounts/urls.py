@@ -2,6 +2,7 @@ from django.urls import path,include
 from accounts.views import UserRegistration,LogoutAPIView,UserLoginView,UserProfileView,UserChangePasswordView,SendPasswordResetEmailView,UserPasswordResetView
 from rest_framework_simplejwt.views import TokenRefreshView
 
+
 urlpatterns = [
     path('register/',UserRegistration.as_view(),name='register'),
     path('login/',UserLoginView.as_view(),name='login'),

@@ -24,7 +24,9 @@ class UserRegistration(APIView):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
+            profile_data = request.data.pop('profile', {})
             token = get_tokens_for_user(user)
+            Profile.objects.create(user=user, **profile_data)
             return Response({'token':token,'msg':'Registration successful'},status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
@@ -49,7 +51,7 @@ class UserProfileView(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
     def get(self,request,format=None):
-        serializer = UserProfileSerializer(request.user)
+        serializer = UserProfileSerializer(request.user.profile)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
 class UserChangePasswordView(APIView):

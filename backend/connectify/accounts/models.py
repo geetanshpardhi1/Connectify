@@ -64,3 +64,14 @@ class User(AbstractBaseUser):
   @property
   def is_staff(self):
       return self.is_admin
+  
+#User profile model
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100,blank=True,null=True)
+    last_name = models.CharField(max_length=100,blank=True,null=True)
+    profile_img = models.ImageField(upload_to='profile_img',blank=True,null=True)
+    dob = models.DateField(blank=True,null=True)
+    phone_number = models.IntegerField(blank=True,null=True)
+    gender = models.CharField(max_length=50,blank=True,null=True)
+    bio = models.CharField(max_length=500,blank=True,null=True)
