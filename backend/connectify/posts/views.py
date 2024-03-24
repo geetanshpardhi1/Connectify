@@ -16,3 +16,15 @@ class PostCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class OwnPostsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        user = request.user
+        own_posts = Post.objects.filter(user=user)
+        if own_posts.exists():
+            serializer = PostSerializer(own_posts, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'msg':'You have not posted yet !'}, status=status.HTTP_200_OK)
+        

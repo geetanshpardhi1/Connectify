@@ -6,7 +6,7 @@ class PostSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         model = Post
-        fields = ['user_id','username', 'caption', 'content']
+        fields = ['user_id','username', 'content' ,'caption','created_at']
         extra_kwargs = {
             'user': {'read_only': True},
         }
