@@ -3,7 +3,7 @@ import os
 from connectify import settings
 from accounts.models import User
 
-def post_content_upload_path(instance, filename): #for manual pathing of post content
+def post_content_upload_path(instance, filename):
     username = instance.user.username
     return f"posts/content/{username}/{filename}"
 class Post(models.Model):

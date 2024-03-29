@@ -68,7 +68,22 @@ class CommentCreateView(APIView):
 
         serializer = CommentCreateSerializer(data={'post': post_id, 'text': text}, context={'request': request})
         if serializer.is_valid():
-            serializer.save(user=request.user)  # Assign the authenticated user to the user field
+            serializer.save(user=request.user)  
             return Response({'detail': 'Comment added successfully.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PostDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [UserRenderer]
+    def delete(self, request, format=None):
+        post_id = request.data.get("post_id")
+        try:
+            post = Post.objects.get(pk=post_id)
+        except Post.DoesNotExist:
+            return Response({'detail': 'Post not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if post.user != request.user:
+            return Response({'detail': 'You are not authorized to delete this post.'}, status=status.HTTP_403_FORBIDDEN)
+
+        post.delete()
+        return Response({'detail': 'Post deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
         
