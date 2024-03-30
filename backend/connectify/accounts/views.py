@@ -107,3 +107,16 @@ class LogoutAPIView(APIView):
             return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "Invalid token or token not provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
+class ParticulartUserProfile(APIView):
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [UserRenderer]
+    def post(self, request, format=None):
+        username = request.data.get('username')
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserProfileSerializer(user.profile)
+        return Response(serializer.data)
