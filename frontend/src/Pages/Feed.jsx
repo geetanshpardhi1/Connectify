@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Story from "../Components/Story/Story";
 import Feeds from "../Components/Feeds/Feeds";
 import { useNavigate } from "react-router-dom";
 import "../index.css";
 import { Link } from "react-router-dom";
+import profileDefault from "../assets/profiledefault.png";
+import Addnewpost from "../Components/Posts/Addnewpost";
 
 export default function IndexPage() {
   const navigate = useNavigate();
@@ -13,12 +16,80 @@ export default function IndexPage() {
   const [menu1, setMenu1] = useState(false);
   const [menu2, setMenu2] = useState(false);
   const [menu3, setMenu3] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileImg, setProfileImg] = useState(profileDefault);
+  const [showNewPostForm, setShowNewPostForm] = useState(false);
+  const [recipient, setRecipient] = useState("");
+  const [message, setMessage] = useState("");
+  const [showPendingRequests, setShowPendingRequests] = useState(false);
+  const [requests, setRequests] = useState([]);
+
+  const togglePendingRequests = () => {
+    setShowPendingRequests(!showPendingRequests);
+  };
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) {
+    const tokenString = localStorage.getItem("token");
+
+    if (!tokenString) {
       navigate("/");
+      return;
     }
-  });
+
+    const tokenObject = JSON.parse(tokenString);
+    let accessToken = tokenObject.access;
+
+    fetch("http://localhost:8000/api/user/profile/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Failed to fetch user details");
+        }
+      })
+      .then((data) => {
+        console.log(data);
+        setProfileName(data.username);
+        setProfileImg(`http://127.0.0.1:8000/${data.profile_img}`);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        navigate("/");
+      });
+  }, []);
+
+  useEffect(() => {
+    const fetchPendingRequests = async () => {
+      const tokenString = localStorage.getItem("token");
+      try {
+        const tokenObject = JSON.parse(tokenString);
+        let accessToken = tokenObject.access;
+        const refreshToken = tokenObject.refresh;
+        const response = await fetch(
+          "http://localhost:8000/api/friends/pending-requests/",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = await response.json();
+        setRequests(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchPendingRequests();
+  }, []);
 
   const handleLogout = async () => {
     const tokenString = localStorage.getItem("token");
@@ -31,11 +102,12 @@ export default function IndexPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ refresh_token: refreshToken }), 
+      body: JSON.stringify({ refresh_token: refreshToken }),
     })
       .then((response) => {
         if (response.ok) {
           localStorage.removeItem("token");
+          setProfileName("");
           console.log("Logout successful");
           navigate("/");
         } else {
@@ -44,9 +116,91 @@ export default function IndexPage() {
       })
       .catch((error) => console.error("Error:", error));
   };
+  const handleNewPost = () => {
+    setShowNewPostForm(true);
+  };
+
+  const handleCloseNewPostForm = () => {
+    setShowNewPostForm(false);
+  };
+
+  const sendFriendRequest = async () => {
+    const tokenString = localStorage.getItem("token");
+    try {
+      const tokenObject = JSON.parse(tokenString);
+      let accessToken = tokenObject.access;
+      const refreshToken = tokenObject.refresh;
+      const response = await fetch(
+        "http://localhost:8000/api/friends/friend-request/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ recipient }),
+        }
+      );
+      const data = await response.json();
+      console.log(data);
+      setMessage(data.msg || data.detail);
+    } catch (error) {
+      setMessage(error.msg || error.detail);
+    }
+  };
+
+  const acceptRequest = async (sender, profileName) => {
+    // <-- Add parameters here
+    const tokenString = localStorage.getItem("token");
+    try {
+      const tokenObject = JSON.parse(tokenString);
+      let accessToken = tokenObject.access;
+      const refreshToken = tokenObject.refresh;
+      const response = await fetch(
+        `http://localhost:8000/api/friends/pending-requests/${sender}/${profileName}/accept/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const data = await response.json();
+      alert(data.msg || data.detail);
+    } catch (error) {
+      console.error(error);
+      alert(error.msg || error.detail);
+    }
+  };
+
+  const rejectRequest = async (sender, profileName) => {
+    const tokenString = localStorage.getItem("token");
+    try {
+      const tokenObject = JSON.parse(tokenString);
+      let accessToken = tokenObject.access;
+      const refreshToken = tokenObject.refresh;
+      const response = await fetch(
+        `http://localhost:8000/api/friends/pending-requests/${sender}/${profileName}/reject/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const data = await response.json();
+      alert(data.msg || data.detail);
+    } catch (error) {
+      console.error(error);
+      alert(error.msg || error.detail);
+    }
+  };
 
   return (
     <>
+      {showNewPostForm && <Addnewpost onClose={handleCloseNewPostForm} />}
       <div className="w-full h-full bg-[#1e1e1e]">
         <div className="flex flex-no-wrap">
           {/* Sidebar starts */}
@@ -80,21 +234,24 @@ export default function IndexPage() {
                   <span className="ml-2">Feeds</span>
                 </div>
               </li>
-              <li className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal mt-4 mb-4 py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
+              <li
+                onClick={togglePendingRequests}
+                className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal mt-4 mb-4 py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none"
+              >
                 <div className="flex items-center">
-                  <i class="ri-notification-line text-lg"></i>
+                  <i className="ri-notification-line text-lg"></i>
                   <span className="ml-2">Notification</span>
                 </div>
               </li>
               <li className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal mb-4 py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
                 <div className="flex items-center">
-                  <i class="ri-search-2-line text-lg"></i>
+                  <i className="ri-search-2-line text-lg"></i>
                   <span className="ml-2">Search</span>
                 </div>
               </li>
               <li className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
                 <div className="flex items-center">
-                  <i class="ri-settings-2-line text-lg"></i>
+                  <i className="ri-settings-2-line text-lg"></i>
                   <span className="ml-2">Settings</span>
                 </div>
               </li>
@@ -170,7 +327,7 @@ export default function IndexPage() {
                     <li className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal mt-4 mb-4 py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
                       <div className="flex items-center">
                         <div className="w-6 h-6 md:w-8 md:h-8">
-                          <i class="ri-notification-line text-lg"></i>
+                          <i className="ri-notification-line text-lg"></i>
                         </div>
                         <span className="ml-2 xl:text-base md:text-2xl text-base">
                           Notification
@@ -180,7 +337,7 @@ export default function IndexPage() {
                     <li className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal mb-4 py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
                       <div className="flex items-center">
                         <div className="w-6 h-6 md:w-8 md:h-8">
-                          <i class="ri-search-2-line text-lg"></i>
+                          <i className="ri-search-2-line text-lg"></i>
                         </div>
                         <span className="ml-2 xl:text-base md:text-2xl text-base">
                           Search
@@ -190,7 +347,7 @@ export default function IndexPage() {
                     <li className="pl-6 cursor-pointer text-gray-600 text-sm leading-3 tracking-normal py-2 hover:text-indigo-700 focus:text-indigo-700 focus:outline-none">
                       <div className="flex items-center">
                         <div className="w-6 h-6 md:w-8 md:h-8">
-                          <i class="ri-settings-2-line text-lg"></i>
+                          <i className="ri-settings-2-line text-lg"></i>
                         </div>
                         <span className="ml-2 xl:text-base md:text-2xl text-base">
                           Setting
@@ -205,11 +362,11 @@ export default function IndexPage() {
                       <div className="flex items-center">
                         <img
                           alt="profile-pic"
-                          src="https://tuk-cdn.s3.amazonaws.com/assets/components/boxed_layout/bl_1.png"
+                          src={profileImg}
                           className="w-8 h-8 rounded-md"
                         />
                         <p className="md:text-xl text-gray-800 text-base leading-4 ml-2">
-                          Jane Doe
+                          {profileName}
                         </p>
                       </div>
                       <ul className="flex">
@@ -231,8 +388,11 @@ export default function IndexPage() {
                             <path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2" />
                           </svg>
                         </li>
-                        <li className="cursor-pointer text-black pt-5 pb-3 pl-3">
-                          <i class="ri-add-circle-fill text-2xl"></i>
+                        <li
+                          className="cursor-pointer text-black pt-5 pb-3 pl-3"
+                          onClick={handleNewPost}
+                        >
+                          <i className="ri-add-circle-fill text-2xl"></i>
                         </li>
                       </ul>
                     </div>
@@ -246,12 +406,25 @@ export default function IndexPage() {
             {/* Navigation starts */}
             <nav className="h-16 flex items-center lg:items-stretch justify-end lg:justify-between bg-[#f0f8ff] shadow relative z-10">
               <div className="hidden lg:flex w-full pr-6">
-                <div className="w-1/2 h-full hidden lg:flex items-center pl-6 pr-24"></div>
+                <div className="w-1/2 h-full  lg:flex items-center pl-6 pr-24">
+                  <input
+                    type="text"
+                    placeholder="Recipient Username"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                  />
+                  <button onClick={sendFriendRequest}>Send Request</button>
+                  <p>{message}</p>
+                </div>
                 <div className="w-1/2 hidden lg:flex">
                   <div className="w-full flex items-center pl-8 justify-end">
                     <div className="h-full w-20 flex items-center justify-center border-r border-l">
-                      <div className="relative cursor-pointer text-gray-600">
-                        <i class="ri-add-circle-fill text-xl"></i>
+                      <div
+                        className="relative cursor-pointer text-gray-600"
+                        onClick={handleNewPost}
+                      >
+                        <i className="ri-add-circle-fill text-xl"></i>
+                        {/* todo add new post */}
                         <div className="w-2 h-2 rounded-full bg-red-400 border border-white absolute inset-0 mt-1 mr-1 m-auto" />
                       </div>
                     </div>
@@ -338,13 +511,15 @@ export default function IndexPage() {
                         <div className="relative">
                           <img
                             className="rounded-full h-10 w-10 object-cover"
-                            src="https://tuk-cdn.s3.amazonaws.com/assets/components/sidebar_layout/sl_1.png"
+                            src={profileImg}
                             alt="avatar"
                           />
                           <div className="w-2 h-2 rounded-full bg-green-400 border border-white absolute inset-0 mb-0 mr-0 m-auto" />
                         </div>
                       </div>
-                      <p className="text-gray-800 text-sm mx-3">Jane Doe</p>
+                      <p className="text-gray-800 text-sm mx-3">
+                        {profileName}
+                      </p>
                       <div className="cursor-pointer text-gray-600">
                         <svg
                           aria-haspopup="true"
@@ -410,6 +585,53 @@ export default function IndexPage() {
           </div>
         </div>
       </div>
+      {/* Pending Requests Box */}
+      {showPendingRequests && (
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Pending Requests</h2>
+            {/* You can render your pending requests here */}
+            <ul>
+              {Array.isArray(requests) && requests.length > 0 ? (
+                requests.map((request, index) => (
+                  <>
+                    <li key={index}>
+                      {request.sender} - {request.created_at}
+                    </li>
+                    <div>
+                      <button
+                        onClick={() =>
+                          acceptRequest(request.sender, profileName)
+                        }
+                        className="bg-green-500 px-4 py-1 rounded text-white mr-2"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() =>
+                          rejectRequest(request.sender, profileName)
+                        }
+                        className="bg-red-500 px-4 py-1 rounded text-white"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </>
+                ))
+              ) : (
+                <p>No pending requests</p>
+              )}
+            </ul>
+            {/* For now, just an example close button */}
+            <button
+              className="bg-red-500 text-white px-4 py-2 rounded"
+              onClick={togglePendingRequests}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

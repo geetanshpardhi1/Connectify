@@ -93,7 +93,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'connectify',
         'USER':'root',
-        'PASSWORD': 'geetansh75520123',
+        # 'PASSWORD': 'geetansh75520123',
+        'PASSWORD': '0206vigor@',
         'HOST':'127.0.0.1',
         'PORT':'3306'
     }
