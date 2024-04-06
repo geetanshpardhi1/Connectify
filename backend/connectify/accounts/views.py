@@ -120,3 +120,17 @@ class ParticulartUserProfile(APIView):
 
         serializer = UserProfileSerializer(user.profile)
         return Response(serializer.data)
+
+class UserSearchView(APIView):
+    renderer_classes = [UserRenderer]
+    def get(self, request):
+        query = request.query_params.get('query')
+        if query:
+            profiles = Profile.objects.filter(user__username__icontains=query) | Profile.objects.filter(first_name__icontains=query)
+            if profiles.exists():
+                serialized_profiles = UserProfileSerializer(profiles, many=True)
+                return Response(serialized_profiles.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'No users found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'error': 'Query parameter "query" is required'}, status=status.HTTP_400_BAD_REQUEST)
