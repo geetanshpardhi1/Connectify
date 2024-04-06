@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Post,Like,Comment
-from .serializers import PostSerializer,PostDetailSerializer,LikeCreateSerializer,CommentCreateSerializer
+from .serializers import PostSerializer,FriendPostSerializer,PostDetailSerializer,LikeCreateSerializer,CommentCreateSerializer
 from accounts.renderers import UserRenderer
 from rest_framework.permissions import IsAuthenticated
 
@@ -86,4 +86,15 @@ class PostDeleteView(APIView):
 
         post.delete()
         return Response({'detail': 'Post deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+    
+class FriendPostsView(APIView):
+    def get(self, request, format=None):
+        user = request.user
+        friend_posts = Post.objects.filter(user__user1_friendships__user2=user) | \
+                       Post.objects.filter(user__user2_friendships__user1=user)
+        serializer = FriendPostSerializer(friend_posts, many=True)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
         

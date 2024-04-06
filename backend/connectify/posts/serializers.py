@@ -74,3 +74,8 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         if not isinstance(value, Post):
             raise serializers.ValidationError("Invalid post object.")
         return value
+
+class FriendPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'user', 'content', 'caption', 'created_at']
