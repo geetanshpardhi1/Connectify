@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import Story from "../Components/Story/Story";
 import Feeds from "../Components/Feeds/Feeds";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +22,8 @@ export default function IndexPage() {
   const [message, setMessage] = useState("");
   const [showPendingRequests, setShowPendingRequests] = useState(false);
   const [requests, setRequests] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
 
   const togglePendingRequests = () => {
     setShowPendingRequests(!showPendingRequests);
@@ -197,6 +198,47 @@ export default function IndexPage() {
       alert(error.msg || error.detail);
     }
   };
+
+  // Function to handle the search
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProfiles = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const tokenObject = JSON.parse(token);
+        let accessToken = tokenObject.access;
+        const response = await fetch(
+          `http://127.0.0.1:8000/api/user/user-profile/?search=${searchQuery}`,
+          {
+            method:"POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (isMounted) {
+          if (Array.isArray(data)) {
+            setSearchResults(data);
+          } else {
+            setSearchResults([]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profiles:", error);
+      }
+    };
+
+    if (searchQuery.trim() !== "") {
+      fetchProfiles();
+    } else {
+      setSearchResults([]);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchQuery]);
 
   return (
     <>
@@ -402,11 +444,12 @@ export default function IndexPage() {
             </div>
           </div>
           {/* Sidebar ends */}
+
           <div className="w-full">
             {/* Navigation starts */}
             <nav className="h-16 flex items-center lg:items-stretch justify-end lg:justify-between bg-[#f0f8ff] shadow relative z-10">
               <div className="hidden lg:flex w-full pr-6">
-                <div className="w-1/2 h-full  lg:flex items-center pl-6 pr-24">
+                {/* <div className="w-1/2 h-full  lg:flex items-center pl-6 pr-24">
                   <input
                     type="text"
                     placeholder="Recipient Username"
@@ -415,7 +458,35 @@ export default function IndexPage() {
                   />
                   <button onClick={sendFriendRequest}>Send Request</button>
                   <p>{message}</p>
+                </div> */}
+                {/* Search functionality JSX */}
+                <div className="w-full flex items-center justify-start mx-3">
+                  <input
+                    type="text"
+                    placeholder="Search profiles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border p-2 rounded w-1/2"
+                  />
+                  <button
+                    onClick={() => {}}
+                    className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
+                  >
+                    Search
+                  </button>
+                  {/* Display search results */}
+                  <div>
+                    {Array.isArray(searchResults) &&
+                      searchResults.map((profile, index) => (
+                        <div key={index}>
+                          {/* Your profile rendering logic here */}
+                          <p>{profile.name}</p>
+                          {/* Add more profile details as needed */}
+                        </div>
+                      ))}
+                  </div>
                 </div>
+
                 <div className="w-1/2 hidden lg:flex">
                   <div className="w-full flex items-center pl-8 justify-end">
                     <div className="h-full w-20 flex items-center justify-center border-r border-l">
@@ -577,7 +648,6 @@ export default function IndexPage() {
                   <Story />
                 </div>
                 <div className="feed-container absolute overflow-y-auto h-[68vh] bg-black border-solid border-white border-2 mt-[12%] left-[20%] w-[60%] p-3">
-                  <Feeds />
                   <Feeds />
                 </div>
               </div>

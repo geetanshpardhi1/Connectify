@@ -16,6 +16,8 @@ const Profile = () => {
   const [editedFirstName, setEditedFirstName] = useState("");
   const [editedLastName, setEditedLastName] = useState("");
   const [editedBio, setEditedBio] = useState("");
+  const [friendsModal, setFriendsModal] = useState(false);
+  const [friendsList, setFriendsList] = useState([]);
 
   const [profileImage, setProfileImage] = useState(null); // State to hold the selected image file
 
@@ -52,6 +54,16 @@ const Profile = () => {
 
   const closeCommentsModal = () => {
     setCommentsModal(false);
+    document.body.style.overflow = "auto";
+  };
+
+  const openFriendsModal = () => {
+    setFriendsModal(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeFriendsModal = () => {
+    setFriendsModal(false);
     document.body.style.overflow = "auto";
   };
 
@@ -156,6 +168,38 @@ const Profile = () => {
     fetchUserProfile();
   }, []);
 
+  useEffect(() => {
+    const fetchFriendsList = async () => {
+      const tokenString = localStorage.getItem("token");
+      try {
+        const tokenObject = JSON.parse(tokenString);
+        let accessToken = tokenObject.access;
+        const refreshToken = tokenObject.refresh;
+        const friendsResponse = await fetch(
+          "http://localhost:8000/api/friends/friend-list/",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (friendsResponse.ok) {
+          const friendsData = await friendsResponse.json();
+          console.log("friends", friendsData);
+          setFriendsList(friendsData);
+        } else {
+          console.error("Failed to fetch friends list");
+        }
+      } catch (error) {
+        console.error("Error fetching friends list:", error);
+      }
+    };
+
+    fetchFriendsList();
+  }, []);
+
   const handleSave = async () => {
     // Prepare the form data including the profile image
     const formData = new FormData();
@@ -228,8 +272,65 @@ const Profile = () => {
     }
   };
 
+  const handleRemoveFriend = async (friendUsername) => {
+    const tokenString = localStorage.getItem("token");
+    const tokenObject = JSON.parse(tokenString);
+    const accessToken = tokenObject.access;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/friends/remove-friend/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            friend_username: friendUsername,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedFriendsList = friendsList.filter(
+          (friend) => friend.friend !== friendUsername
+        );
+        setFriendsList(updatedFriendsList);
+      } else {
+        console.error("Failed to remove friend");
+      }
+    } catch (error) {
+      console.error("Error removing friend:", error);
+    }
+  };
+
   return (
     <>
+      {friendsModal && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg relative overflow-y-scroll max-h-[400px]">
+            <button
+              className="absolute top-0 right-2 text-3xl text-gray-900"
+              onClick={closeFriendsModal}
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-semibold mb-4 text-black">
+              Friends List
+            </h2>
+            {friendsList.map((friend, index) => (
+              <div key={index} className="mb-2">
+                <p className="text-lg text-black">{friend.friend}</p>
+                <button onClick={() => handleRemoveFriend(friend.friend)}>
+                  Remove Friend
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="w-full min-h-screen bg-zinc-900 text-white py-5">
         <div className="nav flex justify-around items-center px-4">
           <h3 className="text-lg">{username}</h3>
@@ -237,7 +338,10 @@ const Profile = () => {
             <a href="/upload">
               <i className="text-[1.4rem] ri-add-box-line"></i>
             </a>
-            <i className="text-[1.4rem] ri-menu-line"></i>
+            <i
+              className="text-[1.4rem] ri-menu-line"
+              onClick={openFriendsModal}
+            ></i>
           </div>
         </div>
         <div className="flex justify-around items-center px-4 mt-8">
@@ -250,7 +354,7 @@ const Profile = () => {
           </div>
           <div className="stats flex gap-5 items-center justify-between">
             <div className="flex flex-col items-center justify-center">
-              <h3>322</h3>
+              <h3>{posts.length}</h3>
               <h4>Posts</h4>
             </div>
             <div className="flex flex-col items-center justify-center">
@@ -258,7 +362,7 @@ const Profile = () => {
               <h4>Followers</h4>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <h3>582</h3>
+              <h3>{friendsList.length}</h3>
               <h4>Following</h4>
             </div>
           </div>
