@@ -79,10 +79,13 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class FriendPostSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', read_only=True)
     profile_img = serializers.SerializerMethodField(read_only=True)
+    total_likes = serializers.IntegerField(source='likes.count', read_only=True)
+    likes = LikeSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'profile_img', 'content', 'caption', 'created_at']
+        fields = ['id', 'user', 'profile_img','likes','total_likes', 'comments','content', 'caption', 'created_at']
 
     def get_profile_img(self, obj):
         user = obj.user
