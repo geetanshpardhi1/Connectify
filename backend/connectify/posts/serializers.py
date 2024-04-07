@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post,Comment,Like
+from accounts.models import *
 
 class PostSerializer(serializers.ModelSerializer):
     user_id = serializers.CharField(source='user.id', read_only=True)
@@ -76,6 +77,16 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         return value
 
 class FriendPostSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
+    profile_img = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Post
-        fields = ['id', 'user', 'content', 'caption', 'created_at']
+        fields = ['id', 'user', 'profile_img', 'content', 'caption', 'created_at']
+
+    def get_profile_img(self, obj):
+        user = obj.user
+        if hasattr(user, 'profile') and user.profile.profile_img:
+            return user.profile.profile_img.url
+        else:
+            return "" 
