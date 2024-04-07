@@ -131,6 +131,6 @@ class UserSearchView(APIView):
                 serialized_profiles = UserProfileSerializer(profiles, many=True)
                 return Response(serialized_profiles.data, status=status.HTTP_200_OK)
             else:
-                return Response({'error': 'No users found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'error': 'No users found'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Query parameter "query" is required'}, status=status.HTTP_400_BAD_REQUEST)
