@@ -18,7 +18,6 @@ export default function IndexPage() {
   const [profileName, setProfileName] = useState("");
   const [profileImg, setProfileImg] = useState(profileDefault);
   const [showNewPostForm, setShowNewPostForm] = useState(false);
-  const [recipient, setRecipient] = useState("");
   const [message, setMessage] = useState("");
   const [showPendingRequests, setShowPendingRequests] = useState(false);
   const [requests, setRequests] = useState([]);
@@ -125,7 +124,7 @@ export default function IndexPage() {
     setShowNewPostForm(false);
   };
 
-  const sendFriendRequest = async () => {
+  const sendFriendRequest = async (recipientUsername) => {
     const tokenString = localStorage.getItem("token");
     try {
       const tokenObject = JSON.parse(tokenString);
@@ -139,12 +138,13 @@ export default function IndexPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ recipient }),
+          body: JSON.stringify({ recipient: recipientUsername }),
         }
       );
       const data = await response.json();
       console.log(data);
       setMessage(data.msg || data.detail);
+      alert("Friend request sent successfully");
     } catch (error) {
       setMessage(error.msg || error.detail);
     }
@@ -203,25 +203,21 @@ export default function IndexPage() {
   useEffect(() => {
     let isMounted = true;
     const fetchProfiles = async () => {
-      const token = localStorage.getItem("token");
       try {
-        const tokenObject = JSON.parse(token);
-        let accessToken = tokenObject.access;
         const response = await fetch(
-          `http://127.0.0.1:8000/api/user/user-profile/?search=${searchQuery}`,
+          `http://127.0.0.1:8000/api/user/search/?query=${searchQuery}`,
           {
-            method:"POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+            method: "GET",
           }
         );
         const data = await response.json();
         if (isMounted) {
           if (Array.isArray(data)) {
             setSearchResults(data);
+            console.log("search data", data);
           } else {
-            setSearchResults([]);
+            console.log("search data err", data);
+            setSearchResults(data.error);
           }
         }
       } catch (error) {
@@ -474,17 +470,6 @@ export default function IndexPage() {
                   >
                     Search
                   </button>
-                  {/* Display search results */}
-                  <div>
-                    {Array.isArray(searchResults) &&
-                      searchResults.map((profile, index) => (
-                        <div key={index}>
-                          {/* Your profile rendering logic here */}
-                          <p>{profile.name}</p>
-                          {/* Add more profile details as needed */}
-                        </div>
-                      ))}
-                  </div>
                 </div>
 
                 <div className="w-1/2 hidden lg:flex">
@@ -699,6 +684,34 @@ export default function IndexPage() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+      {/* Search Results Box */}
+      {searchQuery.length > 0 && (
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Search Results</h2>
+            {Array.isArray(searchResults) && searchResults.length > 0 ? (
+              <ul>
+                {searchResults.map((profile, index) => (
+                  <li
+                    key={index}
+                    className="flex justify-between items-center mb-2"
+                  >
+                    <span>{profile.username}</span>
+                    <button
+                      className="bg-blue-500 text-white px-4 py-2 rounded"
+                      onClick={() => sendFriendRequest(profile.username)} // Pass the username to sendFriendRequest function
+                    >
+                      Send Friend Request
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No user found</p>
+            )}
           </div>
         </div>
       )}
