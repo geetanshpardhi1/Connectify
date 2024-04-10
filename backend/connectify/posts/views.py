@@ -31,22 +31,30 @@ class OwnPostsListView(APIView):
 
 class LikePostView(APIView):
     permission_classes = [IsAuthenticated]
-    renderer_classes = [UserRenderer]
+
     def post(self, request, format=None):
-        post_id = request.data.get('post_id')
-        if not post_id:
-            return Response({'detail': 'Please provide the post_id in the request data.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
+        post_id = request.data.get("post_id")
+        existing_like = Like.objects.filter(post=post_id, user=request.user).exists()
+        if existing_like:
+            like = Like.objects.get(post=post_id, user=request.user)
+            like.delete()
             post = Post.objects.get(pk=post_id)
-        except Post.DoesNotExist:
-            return Response({'detail': 'Post not found.'}, status=status.HTTP_404_NOT_FOUND)
+            post.likes_count = post.likes.count()
+            post.save()
 
-        serializer = LikeCreateSerializer(data={'post': post_id}, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'detail': 'Post liked successfully.'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Like deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+        else:
+          
+            serializer = LikeCreateSerializer(data={'post': post_id},context={'request':request})
+            if serializer.is_valid():
+                serializer.save()
+
+                post = Post.objects.get(pk=post_id)
+                post.likes_count = post.likes.count()
+                post.save()
+
+                return Response({'detail': 'Post liked successfully.'}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CommentCreateView(APIView):
     permission_classes = [IsAuthenticated]
