@@ -43,12 +43,16 @@ const Feeds = () => {
       const tokenString = localStorage.getItem("token");
       const tokenObject = JSON.parse(tokenString);
       const accessToken = tokenObject.access;
-
-
+  
+      let action = "like";
+      if (isLiked) {
+        action = "unlike";
+      }
+  
       const response = await fetch(
         `http://127.0.0.1:8000/api/posts/like-post/`,
         {
-          method : "POST",
+          method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
@@ -58,26 +62,41 @@ const Feeds = () => {
           }),
         }
       );
-
+  
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === id
-            ? {
-                ...post,
-                likes: isLiked ? post.likes - 1 : post.likes + 1,
-                isLiked: !isLiked,
-              }
-            : post
-        )
-      );
+  
+      if (action === "like") {
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === id
+              ? {
+                  ...post,
+                  likes: [...post.likes, { id  }],
+                  isLiked: true,
+                }
+              : post
+          )
+        );
+      } else {
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === id
+              ? {
+                  ...post,
+                  likes: post.likes.filter((like) => like.id !== id),
+                  isLiked: false,
+                }
+              : post
+          )
+        );
+      }
     } catch (error) {
       console.error("Error liking post:", error);
     }
   };
+  
 
   const toggleCommentBox = (id) => {
     setCommentBoxOpen((prev) => ({
@@ -115,7 +134,9 @@ const Feeds = () => {
 
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
-          post.id === id ? { ...post, comments: [...post.comments, newComment] } : post
+          post.id === id
+            ? { ...post, comments: [...post.comments, newComment] }
+            : post
         )
       );
 
@@ -129,7 +150,7 @@ const Feeds = () => {
     <>
       {posts.map((post, index) => (
         <div
-        key={`${post.user}-${index}`}
+          key={`${post.user}-${index}`}
           className="feed relative flex flex-col items-start justify-center mb-3"
         >
           <div className="profileName flex gap-3 items-center justify-start">
@@ -147,7 +168,11 @@ const Feeds = () => {
             <h2 className="text-white font-bold">{post.user}</h2>
           </div>
           <div className="feedContent h-full w-full flex items-center justify-center">
-            <img width={"60%"} src={`http://127.0.0.1:8000/${post.content}`} alt="" />
+            <img
+              width={"60%"}
+              src={`http://127.0.0.1:8000/${post.content}`}
+              alt=""
+            />
           </div>
           <div className="like-com flex items-center gap-2 text-white">
             <div
@@ -159,7 +184,7 @@ const Feeds = () => {
                   post.isLiked ? "text-red-500" : "text-gray-500"
                 }`}
               ></i>
-              <p>{post.likes.length}</p>
+              <p>{post.likes ? post.likes.length : "0"}</p>
             </div>
 
             <div
