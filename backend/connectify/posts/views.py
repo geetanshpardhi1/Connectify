@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from accounts.models import User
 from .models import Post,Like,Comment
 from .serializers import PostSerializer,FriendPostSerializer,PostDetailSerializer,LikeCreateSerializer,CommentCreateSerializer
 from accounts.renderers import UserRenderer
@@ -104,5 +105,14 @@ class FriendPostsView(APIView):
         
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class UserPostsListView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        
+    def get(self, request, format=None):
+        username = request.data.get("username")
+        user = User.objects.get(username=username)
+        posts = Post.objects.filter(user=user)
+        if posts.exists():
+            serializer = PostDetailSerializer(posts, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'msg':'Not posted yet !'}, status=status.HTTP_200_OK)
