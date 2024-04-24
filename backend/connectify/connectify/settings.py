@@ -36,10 +36,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'accounts',
     'friends',
     'posts',
+    'chatApp',
     'rest_framework',
     # 'rest_framework_simplejwt',
     'corsheaders',
@@ -76,9 +78,18 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'connectify.wsgi.application'
+# WSGI_APPLICATION = 'connectify.wsgi.application'
+ASGI_APPLICATION = "connectify.asgi.application"
 
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -120,6 +131,7 @@ SIMPLE_JWT = {
 #for cross origin resource sharing
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://localhost:6379",
     "https://sub.example.com",
     "http://localhost:8080",
     "http://127.0.0.1:9000",

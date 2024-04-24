@@ -31,7 +31,8 @@ class PendingRequestSerializer(serializers.ModelSerializer):
         fields = ['sender', 'recipient', 'status','created_at']
         
 class FriendshipSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source='user2.id',read_only=True)
     friend = serializers.CharField(source='user2.username', read_only=True)
     class Meta:
         model = Friendship
-        fields = ['friend','created_at']
+        fields = ['id','friend','created_at']
